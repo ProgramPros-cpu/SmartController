@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="SmartController v10 — Android smart home app for Arduino UNO. Bluetooth serial, offline voice control, biometric lock, motion gestures, party mode."/>
+  <meta property="og:title" content="SmartController v10 — Arduino Smart Home App"/>
+  <meta property="og:description" content="Turn your Android into a powerful offline smart home remote. HC-05/HC-06, voice wake word, tilt & shake gestures, biometric lock."/>
+  <meta property="og:type" content="website"/>
+  <title>SmartController v10 — Arduino Smart Home App</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <style>
+:root{
+  --bg:#0b0d10;--surf:#10131a;--card:#151922;--card2:#1a1f28;
+  --border:rgba(255,255,255,.055);--bh:rgba(255,255,255,.11);
+  --amber:#f59e0b;--amberd:#d97706;--ambergl:rgba(245,158,11,.15);
+  --blue:#3b82f6;--bluegl:rgba(59,130,246,.15);
+  --green:#22c55e;--red:#ef4444;--purple:#a855f7;--teal:#14b8a6;--orange:#f97316;
+  --text:#e2e8f0;--dim:#94a3b8;--muted:#475569;
+  --fh:'Syne',sans-serif;--fm:'JetBrains Mono',monospace;
+  --t:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--fm);background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.022;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px}
+a{color:var(--amber);text-decoration:none;transition:var(--t)}
+a:hover{color:#fbbf24}
+p{margin-bottom:1rem}
+.container{max-width:1160px;margin:0 auto;padding:0 28px}
+#prog{position:fixed;top:0;left:0;height:2px;width:0;z-index:10001;background:linear-gradient(90deg,var(--blue),var(--amber));transition:width .08s linear}
+#loader{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .55s ease,visibility .55s ease}
+#loader.gone{opacity:0;visibility:hidden;pointer-events:none}
+.ld-logo{font-family:var(--fh);font-size:1.4rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.ld-track{width:200px;height:2px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.ld-bar{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--amber));animation:ldgo 1.5s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes ldgo{0%{width:0}60%{width:70%}100%{width:100%}}
+.ld-txt{font-size:.72rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.logo-sq{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.logo-sq span{width:9px;height:9px;border-radius:2px;display:block}
+.sq-b{background:var(--blue)}.sq-a{background:var(--amber)}.sq-c{background:var(--blue);opacity:.4}.sq-d{background:var(--amber);opacity:.4}
+header{position:sticky;top:0;z-index:1000;background:rgba(11,13,16,.88);backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--border)}
+.hd-inner{display:flex;align-items:center;justify-content:space-between;height:62px}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--fh);font-size:1.2rem;font-weight:800;color:var(--text);letter-spacing:-.3px;text-decoration:none}
+nav{display:flex;align-items:center;gap:6px}
+nav a{color:var(--dim);font-size:.78rem;font-weight:400;letter-spacing:.8px;text-transform:uppercase;padding:6px 12px;border-radius:7px;border:1px solid transparent;transition:var(--t)}
+nav a:hover{color:var(--text);border-color:var(--bh)}
+nav a.active{color:var(--amber);border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.06)}
+.nav-cta{background:var(--amber)!important;color:#000!important;font-weight:700!important;border-color:transparent!important}
+.nav-cta:hover{background:#fbbf24!important}
+.ham{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px}
+.ham span{display:block;width:21px;height:2px;background:var(--dim);border-radius:2px;transition:var(--t)}
+.hero{padding:96px 0 72px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-15%;left:-8%;width:55%;height:75%;background:radial-gradient(ellipse,rgba(59,130,246,.06),transparent 68%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-20%;right:-8%;width:55%;height:75%;background:radial-gradient(ellipse,rgba(245,158,11,.05),transparent 68%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:56px;align-items:center;position:relative;z-index:1}
+.h-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.22);color:var(--amber);font-size:.72rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border-radius:100px;margin-bottom:28px}
+.h-badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pdot 2s ease-in-out infinite}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-family:var(--fh);font-size:clamp(2.5rem,5vw,3.9rem);font-weight:800;line-height:1.07;letter-spacing:-1.5px;color:var(--text);margin-bottom:22px}
+h1 em{font-style:normal;color:transparent;-webkit-text-stroke:1px var(--amber)}
+.hero-desc{font-size:1rem;color:var(--dim);max-width:470px;margin-bottom:38px;line-height:1.85;font-weight:300}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:44px}
+.btn-p{display:inline-flex;align-items:center;gap:9px;background:var(--amber);color:#000;font-family:var(--fh);font-size:.92rem;font-weight:700;padding:13px 26px;border-radius:8px;cursor:pointer;transition:var(--t);position:relative;overflow:hidden;text-decoration:none}
+.btn-p::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent 55%);pointer-events:none}
+.btn-p:hover{background:#fbbf24;color:#000;transform:translateY(-2px);box-shadow:0 12px 28px rgba(245,158,11,.32)}
+.btn-p:active{transform:translateY(0)}
+.btn-s{display:inline-flex;align-items:center;gap:9px;background:transparent;color:var(--dim);font-family:var(--fh);font-size:.92rem;font-weight:600;padding:13px 22px;border-radius:8px;border:1px solid var(--bh);cursor:pointer;transition:var(--t);text-decoration:none}
+.btn-s:hover{color:var(--text);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.04)}
+.hero-pills{display:flex;gap:28px;flex-wrap:wrap}
+.pill{display:flex;flex-direction:column;gap:2px}
+.pill .v{font-family:var(--fh);font-size:1.35rem;font-weight:800;color:var(--text)}
+.pill .l{font-size:.68rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.pill-div{width:1px;background:var(--border);align-self:stretch}
+.phone-wrap{display:flex;justify-content:center;align-items:center;position:relative}
+.phone-wrap::before{content:'';position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(245,158,11,.18),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);filter:blur(45px)}
+.phone{width:268px;height:536px;background:linear-gradient(158deg,#252932 0%,#161921 100%);border-radius:44px;padding:10px;border:1px solid rgba(255,255,255,.1);box-shadow:0 40px 80px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.12);position:relative;z-index:1;animation:fphone 5.5s ease-in-out infinite;transition:transform .6s cubic-bezier(.4,0,.2,1)}
+@keyframes fphone{0%,100%{transform:rotate(-4deg) translateY(8px)}50%{transform:rotate(-4deg) translateY(-6px)}}
+.phone:hover{transform:rotate(0) translateY(0)!important;animation-play-state:paused}
+.p-screen{background:#f2f2f7;width:100%;height:100%;border-radius:36px;overflow:hidden;position:relative;color:#000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px}
+.p-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:22px;background:#0b0d10;border-radius:0 0 14px 14px;z-index:20}
+.p-inner{height:100%;overflow-y:auto;padding-bottom:56px;scrollbar-width:none}
+.p-inner::-webkit-scrollbar{display:none}
+.p-nav{background:#fff;padding:30px 14px 10px;border-bottom:1px solid #e5e5ea;display:flex;justify-content:space-between;align-items:flex-end}
+.p-nav-t{font-size:22px;font-weight:700}
+.p-nav-s{font-size:9px;color:#8e8e93;margin-top:2px;display:flex;align-items:center;gap:3px}
+.p-ndot{width:5px;height:5px;background:#34c759;border-radius:50%}
+.p-cta{background:#007aff;color:#fff;border-radius:12px;padding:5px 10px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px}
+.p-sec{padding:10px 12px 0}
+.p-lbl{font-size:9px;color:#8e8e93;letter-spacing:.5px;margin-bottom:4px;margin-left:6px;text-transform:uppercase}
+.p-card{background:#fff;border-radius:10px;overflow:hidden}
+.p-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px}
+.p-rl{display:flex;align-items:center;gap:8px}
+.p-ico{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.p-ico.b{background:rgba(0,122,255,.12);color:#007aff}
+.p-ico.o{background:rgba(255,149,0,.12);color:#ff9500}
+.p-ico.d{background:rgba(120,120,128,.08);color:#8e8e93}
+.p-ico.g{background:rgba(52,199,89,.12);color:#34c759}
+.p-dn{font-size:12px;font-weight:500}
+.p-ds{font-size:9px;color:#8e8e93}
+.p-div{height:1px;background:#e5e5ea;margin-left:46px}
+.p-tog{width:38px;height:22px;background:#e5e5ea;border-radius:11px;position:relative;transition:background .3s}
+.p-tog.on{background:#34c759}
+.p-tog::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:all .3s}
+.p-tog.on::after{left:auto;right:2px}
+.p-voice{display:flex;justify-content:space-between;align-items:center;padding:10px 12px}
+.p-vbtn{width:32px;height:32px;background:#007aff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+.p-quick{display:flex;gap:6px;padding:7px 12px 0}
+.p-qa{flex:1;padding:7px;border-radius:7px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:600}
+.p-qa.on{background:rgba(0,122,255,.1);color:#007aff}
+.p-qa.off{background:rgba(120,120,128,.08);color:#8e8e93}
+.p-bn{position:absolute;bottom:0;left:0;width:100%;height:50px;background:#fff;border-top:1px solid #e5e5ea;display:flex;justify-content:space-around;align-items:center;z-index:10}
+.p-ni{display:flex;flex-direction:column;align-items:center;gap:2px;color:#8e8e93}
+.p-ni i{font-size:16px}
+.p-ni span{font-size:8px}
+.p-ni.on{color:#007aff}
+.p-fab{position:absolute;bottom:58px;right:12px;width:38px;height:38px;background:#34c759;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 4px 12px rgba(52,199,89,.4);z-index:10}
+.p-fab.red{background:#ff3b30;box-shadow:0 4px 12px rgba(255,59,48,.4)}
+.stats-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:34px 0;background:var(--surf)}
+.stats-inner{display:flex;justify-content:space-around;flex-wrap:wrap;gap:20px}
+.stat{text-align:center;display:flex;flex-direction:column;gap:3px}
+.stat-v{font-family:var(--fh);font-size:1.9rem;font-weight:800;color:var(--text)}
+.stat-v.gold{color:var(--amber)}
+.stat-l{font-size:.68rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.sec{padding:76px 0}
+.sec-lbl{display:block;font-size:.7rem;color:var(--amber);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:10px}
+.sec-title{font-family:var(--fh);font-size:clamp(1.55rem,3vw,2.1rem);font-weight:800;color:var(--text);letter-spacing:-.4px;margin-bottom:44px}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:30px 26px;position:relative;overflow:hidden;transition:var(--t)}
+.step-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue),var(--amber));opacity:0;transition:var(--t)}
+.step-card:hover{border-color:var(--bh);transform:translateY(-4px)}
+.step-card:hover::before{opacity:1}
+.step-nrow{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.step-n{font-family:var(--fh);font-size:2.4rem;font-weight:800;color:rgba(255,255,255,.05);line-height:1}
+.step-ic{width:38px;height:38px;background:var(--ambergl);border:1px solid rgba(245,158,11,.22);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:.95rem}
+.step-card h3{font-family:var(--fh);font-size:1rem;color:var(--text);margin-bottom:8px;font-weight:700}
+.step-card p{color:var(--dim);font-size:.85rem;line-height:1.7;margin:0}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:26px;transition:var(--t)}
+.feat-card:hover{border-color:var(--bh);transform:translateY(-3px)}
+.feat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:16px}
+.feat-card h3{font-family:var(--fh);font-size:.96rem;color:var(--text);font-weight:700;margin-bottom:8px}
+.feat-card p{color:var(--dim);font-size:.83rem;line-height:1.7;margin:0}
+.feat-tag{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:100px;margin-top:12px}
+.voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.voice-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px}
+.voice-panel h3{font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--text);margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.voice-panel h3 i{color:var(--amber)}
+.cmd-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.cmd-list li{display:flex;align-items:flex-start;gap:10px;font-size:.83rem;color:var(--dim);line-height:1.5}
+.cmd-list li .em{font-size:.9rem;flex-shrink:0;margin-top:1px}
+.cmd-list li code{color:var(--text);font-size:.8rem;background:rgba(255,255,255,.05);border:1px solid var(--border);padding:2px 8px;border-radius:5px}
+.pin-map-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.pin-header{display:grid;grid-template-columns:1fr 1fr 1fr;padding:12px 20px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+.pin-header span{font-size:.7rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
+.pin-row{display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-bottom:1px solid var(--border);transition:var(--t)}
+.pin-row:last-child{border-bottom:none}
+.pin-row:hover{background:rgba(255,255,255,.02)}
+.pin-row .device{color:var(--text);font-size:.88rem;font-weight:500}
+.pin-row .pin{font-family:var(--fm);color:var(--amber);font-size:.85rem}
+.pin-row .cmd{font-family:var(--fm);font-size:.78rem;color:var(--dim)}
+.pin-indicator{display:inline-flex;align-items:center;gap:6px}
+.pin-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.main-layout{display:grid;grid-template-columns:2.05fr 1fr;gap:34px;padding:0 0 76px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:30px;margin-bottom:26px}
+.card-title{font-family:var(--fh);font-size:.92rem;font-weight:700;color:var(--text);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:9px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.card-title i{color:var(--amber);font-size:.88rem}
+.term-wrap{position:relative;margin-top:4px}
+.term{background:#070910;border:1px solid rgba(255,255,255,.04);border-radius:9px;padding:46px 22px 22px;font-family:var(--fm);font-size:.8rem;line-height:1.95;overflow-x:auto;color:#c9d1d9}
+.term-bar{position:absolute;top:0;left:0;right:0;height:35px;background:#0e1016;border-bottom:1px solid rgba(255,255,255,.04);border-radius:9px 9px 0 0;display:flex;align-items:center;padding:0 14px;gap:7px}
+.td{width:11px;height:11px;border-radius:50%}
+.td.r{background:#ff5f57}.td.y{background:#febc2e}.td.g{background:#28c840}
+.t-lbl{margin-left:auto;font-size:.68rem;color:var(--muted);letter-spacing:1px}
+.t-c{color:#3d4451}.t-p{color:var(--amber)}.t-cmd{color:#7ee787}.t-s{color:#a5d6ff}.t-o{color:#8b949e}
+.t-cur::after{content:'▋';animation:tb 1.1s step-start infinite;color:var(--amber);margin-left:2px}
+@keyframes tb{0%,100%{opacity:1}50%{opacity:0}}
+.copy-btn{position:absolute;top:40px;right:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:6px;color:var(--muted);padding:4px 10px;font-size:.68rem;cursor:pointer;font-family:var(--fm);transition:var(--t);display:flex;align-items:center;gap:5px}
+.copy-btn:hover{background:rgba(255,255,255,.09);color:var(--text)}
+.copy-btn.ok{color:var(--green);border-color:rgba(34,197,94,.28)}
+.dtable{width:100%;border-collapse:collapse}
+.dtable th{text-align:left;font-size:.68rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:0 16px 13px;border-bottom:1px solid var(--border)}
+.dtable td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:.86rem;color:var(--dim)}
+.dtable tr:last-child td{border-bottom:none}
+.dtable td:first-child{color:var(--text);font-weight:500}
+.tag{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:600}
+.tag.g{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.22)}
+.tag.a{background:var(--ambergl);color:var(--amber);border:1px solid rgba(245,158,11,.22)}
+.tag.gr{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border)}
+.tag.b{background:var(--bluegl);color:var(--blue);border:1px solid rgba(59,130,246,.22)}
+.tag.p{background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.22)}
+.rel-list{list-style:none}
+.rel-item{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--border);transition:var(--t)}
+.rel-item:last-child{border-bottom:none}
+.rel-item:hover{padding-left:5px}
+.rel-info{display:flex;flex-direction:column;gap:4px}
+.rel-name{font-family:var(--fh);font-size:.98rem;color:var(--text);font-weight:700}
+.rel-meta{font-size:.73rem;color:var(--muted);display:flex;gap:11px}
+.rel-meta i{color:var(--amber)}
+.rel-acts{display:flex;align-items:center;gap:9px}
+.clog{list-style:none;display:flex;flex-direction:column;gap:9px}
+.clog li{display:flex;align-items:flex-start;gap:9px;font-size:.84rem;color:var(--dim)}
+.clog li::before{content:'▸';color:var(--amber);margin-top:2px;flex-shrink:0}
+.sb-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:22px}
+.sb-title{font-family:var(--fh);font-size:.82rem;font-weight:700;color:var(--text);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+.sb-title i{color:var(--amber)}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.feat-list li{display:flex;align-items:flex-start;gap:10px;font-size:.83rem;color:var(--dim)}
+.feat-list .fi{color:var(--amber);width:15px;text-align:center;flex-shrink:0;margin-top:2px}
+.sb-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:8px;border:1px solid var(--bh);background:rgba(255,255,255,.03);color:var(--dim);font-family:var(--fh);font-size:.83rem;font-weight:600;cursor:pointer;transition:var(--t);text-decoration:none;margin-bottom:9px}
+.sb-btn:hover{background:rgba(255,255,255,.06);color:var(--text);border-color:rgba(255,255,255,.18)}
+.sb-btn.p{background:var(--amber);color:#000;border-color:transparent;font-weight:700}
+.sb-btn.p:hover{background:#fbbf24;color:#000}
+.dl-widget{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(59,130,246,.04));border:1px solid rgba(245,158,11,.18);border-radius:14px;padding:26px 22px;text-align:center;margin-bottom:22px;position:relative;overflow:hidden}
+.dl-widget::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0,rgba(245,158,11,.09),transparent 60%);pointer-events:none}
+.dl-ic{font-size:2.3rem;color:var(--amber);margin-bottom:12px;display:block;animation:bic 3.2s ease-in-out infinite}
+@keyframes bic{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.dl-widget h3{font-family:var(--fh);font-size:1.05rem;color:var(--text);font-weight:800;margin-bottom:5px}
+.dl-widget p{font-size:.78rem;color:var(--muted);margin-bottom:18px}
+.dl-count{font-family:var(--fh);font-size:1.35rem;font-weight:800;color:var(--amber)}
+.dl-clbl{font-size:.67rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.faq-sec{padding:0 0 80px}
+.faq-item{border:1px solid var(--border);border-radius:9px;margin-bottom:9px;overflow:hidden;transition:var(--t)}
+.faq-item:hover{border-color:var(--bh)}
+.faq-item.open{border-color:rgba(245,158,11,.24)}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:17px 20px;cursor:pointer;user-select:none}
+.faq-qt{font-family:var(--fh);font-size:.92rem;color:var(--text);font-weight:600}
+.faq-arr{color:var(--muted);transition:transform .3s ease}
+.faq-item.open .faq-arr{transform:rotate(90deg);color:var(--amber)}
+.faq-a{display:none;padding:0 20px 16px;font-size:.85rem;color:var(--dim);line-height:1.8}
+.faq-item.open .faq-a{display:block}
+#toasts{position:fixed;bottom:26px;right:26px;z-index:9990;display:flex;flex-direction:column;gap:9px;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--bh);border-radius:9px;padding:13px 17px;display:flex;align-items:center;gap:11px;font-size:.83rem;color:var(--text);box-shadow:0 10px 40px rgba(0,0,0,.55);animation:tsl .3s cubic-bezier(.4,0,.2,1);pointer-events:all;max-width:310px}
+.toast.suc .ti{color:var(--green)}.toast.inf .ti{color:var(--blue)}.toast.wrn .ti{color:var(--amber)}
+@keyframes tsl{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tso{from{transform:translateX(0);opacity:1}to{transform:translateX(120%);opacity:0}}
+.toast.rm{animation:tso .3s ease forwards}
+#cookie{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:16px 26px;display:flex;align-items:center;justify-content:space-between;gap:18px;z-index:8000;flex-wrap:wrap;transform:translateY(100%);transition:transform .4s cubic-bezier(.4,0,.2,1)}
+#cookie.show{transform:translateY(0)}
+.ck-txt{font-size:.8rem;color:var(--dim);max-width:580px;flex:1}
+.ck-btns{display:flex;gap:9px;flex-shrink:0}
+.ck-acc{background:var(--amber);color:#000;border:none;font-family:var(--fm);font-size:.78rem;font-weight:700;padding:8px 16px;border-radius:7px;cursor:pointer;transition:var(--t)}
+.ck-acc:hover{background:#fbbf24}
+.ck-dec{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:var(--fm);font-size:.78rem;padding:8px 16px;border-radius:7px;cursor:pointer;transition:var(--t)}
+.ck-dec:hover{color:var(--text)}
+footer{background:var(--surf);border-top:1px solid var(--border);padding:58px 0 30px}
+.ft-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:38px;margin-bottom:44px}
+.ft-brand p{font-size:.82rem;color:var(--muted);line-height:1.8;max-width:230px;margin:12px 0 0}
+.ft-col h4{font-family:var(--fh);font-size:.75rem;color:var(--text);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.ft-col ul a{font-size:.83rem;color:var(--muted);transition:var(--t)}
+.ft-col ul a:hover{color:var(--text);padding-left:4px}
+.ft-bottom{border-top:1px solid var(--border);padding-top:26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:.76rem;color:var(--muted)}
+.ft-links{display:flex;gap:18px}
+.ft-links a{color:var(--muted)}
+.ft-links a:hover{color:var(--text)}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.18);border-radius:100px;font-size:.7rem;color:var(--green);font-weight:600}
+.spulse{width:5px;height:5px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pdot 2s infinite}
+.fu{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.fu.vis{opacity:1;transform:translateY(0)}
+#fb-notice{display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.18);border-radius:8px;padding:11px 16px;font-size:.76rem;color:var(--amber);margin-bottom:16px}
+.tech-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.tech-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:100px;font-size:.74rem;color:var(--dim)}
+@media(max-width:1024px){.ft-grid{grid-template-columns:1fr 1fr}.features-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;text-align:center}
+  .phone-wrap{display:none}
+  .cta-row,.hero-pills{justify-content:center}
+  .hero-desc{margin:0 auto 38px}
+  .h-badge{display:flex;justify-content:center;width:fit-content;margin:0 auto 28px}
+  .main-layout{grid-template-columns:1fr}
+  .steps-grid,.features-grid,.voice-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .hd-inner{flex-wrap:wrap;height:auto;padding:13px 0;gap:10px}
+  nav{display:none;flex-direction:column;width:100%}
+  nav.open{display:flex}
+  .ham{display:flex}
+  .hero{padding:58px 0 46px}
+  h1{font-size:2.1rem}
+  .ft-grid{grid-template-columns:1fr;gap:22px}
+  .ft-bottom{flex-direction:column;text-align:center}
+  #cookie{flex-direction:column}
+  .stats-inner{gap:14px}
+  .pin-header,.pin-row{grid-template-columns:1fr 1fr}
+  .pin-header span:last-child,.pin-row .cmd{display:none}
+}
+  </style>
+</head>
+<body>
+
+<div id="prog"></div>
+<div id="toasts"></div>
+
+<div id="loader">
+  <div class="ld-logo">
+    <div class="logo-sq"><span class="sq-b"></span><span class="sq-a"></span><span class="sq-c"></span><span class="sq-d"></span></div>
+    <span style="color:var(--blue)">Smart</span><span style="color:var(--amber)">Controller</span>
+  </div>
+  <div class="ld-track"><div class="ld-bar"></div></div>
+  <div class="ld-txt">Booting System…</div>
+</div>
+
+<div id="cookie">
+  <p class="ck-txt">We use cookies &amp; Firebase Analytics to track anonymous download metrics. See our <a href="#">Privacy Policy</a>.</p>
+  <div class="ck-btns">
+    <button class="ck-dec" onclick="declineCookies()">Decline</button>
+    <button class="ck-acc" onclick="acceptCookies()">Accept Analytics</button>
+  </div>
+</div>
+
+<header>
+  <div class="container hd-inner">
+    <a href="#" class="logo">
+      <div class="logo-sq"><span class="sq-b"></span><span class="sq-a"></span><span class="sq-c"></span><span class="sq-d"></span></div>
+      <span style="color:var(--blue)">Smart</span><span style="color:var(--amber)">Controller</span>
+    </a>
+    <button class="ham" id="ham" aria-label="Menu" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="main-nav">
+      <a href="SmartController_Hardware_Guide.html">Hardware</a>
+      <a href="#" class="active">Downloads</a>
+      <a href="SmartHome_CustomPins.ino" download>Source</a>
+      <a href="#voice">Voice Cmds</a>
+      <a href="#faq">FAQ</a>
+      <a href="apks/SmartController_v10.apk" download class="nav-cta" onclick="trackDL('nav')"><i class="fa-brands fa-android"></i> Get APK</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="h-badge"><span class="dot"></span>v10.0.0 · HC-05 / HC-06 · Arduino UNO</div>
+      <h1>Your Android.<br><em>Smarter</em><br>Home Hub.</h1>
+      <p class="hero-desc">Full offline Bluetooth serial control for Arduino UNO. Voice wake word, biometric app lock, motion gesture inputs, party mode, and OTA update checks — all in one lightweight APK.</p>
+      <div class="cta-row">
+        <a href="SmartController.apk" download class="btn-p" onclick="trackDL('hero')"><i class="fa-brands fa-android"></i> Download APK</a>
+        <a href="SmartController_Hardware_Guide.html" class="btn-s"><i class="fa-solid fa-book-open"></i> Wiring Guide</a>
+      </div>
+      <div class="hero-pills">
+        <div class="pill"><span class="v">v10.0</span><span class="l">Latest</span></div>
+        <div class="pill-div"></div>
+        <div class="pill"><span class="v">12.4<span style="font-size:.9rem;color:var(--muted)">MB</span></span><span class="l">Package</span></div>
+        <div class="pill-div"></div>
+        <div class="pill"><span class="v">Android 8+</span><span class="l">Minimum OS</span></div>
+        <div class="pill-div"></div>
+        <div class="pill"><span class="v" style="color:var(--amber)" id="hero-cnt">—</span><span class="l">Downloads</span></div>
+      </div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="p-screen">
+          <div class="p-notch"></div>
+          <div class="p-inner">
+            <div class="p-nav">
+              <div><div class="p-nav-t">Home</div><div class="p-nav-s"><span class="p-ndot"></span> HC-05 Connected</div></div>
+              <div class="p-cta"><i class="fa-brands fa-bluetooth"></i> Connected</div>
+            </div>
+            <div class="p-sec">
+              <div class="p-lbl">Voice Command</div>
+              <div class="p-card">
+                <div class="p-voice">
+                  <div><div style="font-size:13px;font-weight:600">Voice Control</div><div style="font-size:10px;color:#8e8e93">Say "Hey Robo..."</div></div>
+                  <div class="p-vbtn"><i class="fa-solid fa-microphone"></i></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-sec">
+              <div class="p-lbl">Lights</div>
+              <div class="p-card">
+                <div class="p-row">
+                  <div class="p-rl"><div class="p-ico b"><i class="fa-regular fa-lightbulb"></i></div><div><div class="p-dn">Left Light</div><div class="p-ds">Pin 2</div></div></div>
+                  <div class="p-tog on"></div>
+                </div>
+                <div class="p-div"></div>
+                <div class="p-row">
+                  <div class="p-rl"><div class="p-ico d"><i class="fa-regular fa-lightbulb"></i></div><div><div class="p-dn">Right Light</div><div class="p-ds">Pin 3</div></div></div>
+                  <div class="p-tog"></div>
+                </div>
+              </div>
+              <div class="p-quick"><div class="p-qa on"><i class="fa-solid fa-power-off"></i> All On</div><div class="p-qa off"><i class="fa-solid fa-power-off"></i> All Off</div></div>
+            </div>
+            <div class="p-sec">
+              <div class="p-lbl">Fans</div>
+              <div class="p-card">
+                <div class="p-row"><div class="p-rl"><div class="p-ico d"><i class="fa-solid fa-fan"></i></div><div><div class="p-dn">Left Fan</div><div class="p-ds">Pin 4</div></div></div><div class="p-tog"></div></div>
+                <div class="p-div"></div>
+                <div class="p-row"><div class="p-rl"><div class="p-ico d"><i class="fa-solid fa-fan"></i></div><div><div class="p-dn">Right Fan</div><div class="p-ds">Pin 5</div></div></div><div class="p-tog"></div></div>
+              </div>
+            </div>
+            <div class="p-sec" style="padding-bottom:10px">
+              <div class="p-lbl">Scenes</div>
+              <div class="p-card">
+                <div class="p-row"><div class="p-rl"><div class="p-ico g" style="font-size:13px">🎉</div><div><div class="p-dn">Party Mode</div><div class="p-ds">Alternating · 10s</div></div></div><i class="fa-solid fa-chevron-right" style="color:#c7c7cc;font-size:11px"></i></div>
+              </div>
+            </div>
+          </div>
+          <div class="p-fab red"><i class="fa-solid fa-power-off"></i></div>
+          <div class="p-bn">
+            <div class="p-ni on"><i class="fa-solid fa-house"></i><span>Dashboard</span></div>
+            <div class="p-ni"><i class="fa-solid fa-mobile-screen"></i><span>Devices</span></div>
+            <div class="p-ni"><i class="fa-solid fa-gear"></i><span>Settings</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="container stats-inner">
+    <div class="stat fu"><div class="stat-v gold" id="stat-cnt">—</div><div class="stat-l">Total Downloads</div></div>
+    <div class="stat fu" style="transition-delay:.08s"><div class="stat-v">4</div><div class="stat-l">Device Slots</div></div>
+    <div class="stat fu" style="transition-delay:.16s"><div class="stat-v">v10</div><div class="stat-l">Current Version</div></div>
+    <div class="stat fu" style="transition-delay:.24s"><div class="stat-v">9</div><div class="stat-l">New Features</div></div>
+    <div class="stat fu" style="transition-delay:.32s"><div class="stat-v">100<span style="font-size:1rem;color:var(--muted)">%</span></div><div class="stat-l">Offline Runtime</div></div>
+    <div class="stat fu" style="transition-delay:.4s"><div class="stat-v"><span style="color:var(--green)">●</span> Live</div><div class="stat-l">System Status</div></div>
+  </div>
+</div>
+
+<!-- STEPS -->
+<section class="sec">
+  <div class="container">
+    <span class="sec-lbl fu">Quick Start</span>
+    <h2 class="sec-title fu">Three Steps to Control</h2>
+    <div class="steps-grid">
+      <div class="step-card fu">
+        <div class="step-nrow"><span class="step-n">01</span><div class="step-ic"><i class="fa-brands fa-android"></i></div></div>
+        <h3>Sideload the APK</h3>
+        <p>Download and install on any Android 8+ device. Enable "Install from unknown sources" in Settings — takes under a minute.</p>
+      </div>
+      <div class="step-card fu" style="transition-delay:.1s">
+        <div class="step-nrow"><span class="step-n">02</span><div class="step-ic"><i class="fa-solid fa-microchip"></i></div></div>
+        <h3>Flash the Arduino Sketch</h3>
+        <p>Open <code style="color:var(--amber);font-size:.82em">SmartHome_CustomPins.ino</code> in Arduino IDE and upload to your UNO, Nano, or Mega.</p>
+      </div>
+      <div class="step-card fu" style="transition-delay:.2s">
+        <div class="step-nrow"><span class="step-n">03</span><div class="step-ic"><i class="fa-brands fa-bluetooth"></i></div></div>
+        <h3>Pair &amp; Start Controlling</h3>
+        <p>Pair HC-05 in Android Bluetooth settings, add it to a Device Slot, tap Connect, and say <em style="color:var(--amber)">"Hey Robo"</em>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec" style="padding-top:0">
+  <div class="container">
+    <span class="sec-lbl fu">What's New in v10</span>
+    <h2 class="sec-title fu">9 Flagship Features</h2>
+    <div class="features-grid">
+      <div class="feat-card fu">
+        <div class="feat-icon" style="background:rgba(59,130,246,.12);color:var(--blue)"><i class="fa-solid fa-globe"></i></div>
+        <h3>Online Hardware Guide</h3>
+        <p>Tap the ℹ icon to open a live WebView of the wiring guide from your Netlify URL — always current without an app update.</p>
+        <span class="feat-tag tag b">WebView</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.05s">
+        <div class="feat-icon" style="background:rgba(168,85,247,.12);color:var(--purple)"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <h3>Party Mode Scene</h3>
+        <p>Alternates Left &amp; Right lights every 400ms for 10 seconds. Trigger via the Scenes card or voice — <em style="color:var(--amber)">"Hey Robo party mode"</em>.</p>
+        <span class="feat-tag tag p">Scene</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.1s">
+        <div class="feat-icon" style="background:rgba(239,68,68,.12);color:var(--red)"><i class="fa-solid fa-power-off"></i></div>
+        <h3>Master Power FAB</h3>
+        <p>Floating action button turns <strong style="color:var(--text)">ALL</strong> devices on or off in one tap. Shows green when all off, red when any device is active.</p>
+        <span class="feat-tag tag" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">FAB</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.15s">
+        <div class="feat-icon" style="background:rgba(20,184,166,.12);color:var(--teal)"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h3>Motion Gestures</h3>
+        <p>Tilt <strong style="color:var(--text)">left</strong> → Left Light · <strong style="color:var(--text)">right</strong> → Right Light · <strong style="color:var(--text)">forward</strong> → Left Fan · <strong style="color:var(--text)">backward</strong> → Right Fan. 1.5s cooldown.</p>
+        <span class="feat-tag tag" style="background:rgba(20,184,166,.1);color:var(--teal);border:1px solid rgba(20,184,166,.2)">Accelerometer</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.2s">
+        <div class="feat-icon" style="background:rgba(249,115,22,.12);color:var(--orange)"><i class="fa-solid fa-hand-point-up"></i></div>
+        <h3>Shake to Toggle All</h3>
+        <p>Shake phone (&gt;2.5g) toggles all devices. Any device on → all off. All off → all on. Slightly longer haptic (100ms) confirms shake detection.</p>
+        <span class="feat-tag tag a">Gesture</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.25s">
+        <div class="feat-icon" style="background:rgba(245,158,11,.12);color:var(--amber)"><i class="fa-solid fa-hand-sparkles"></i></div>
+        <h3>Gesture Haptics</h3>
+        <p>Phone vibrates 60ms on tilt detection, 100ms on shake. Physical confirmation with no audio. Can be toggled off in the Settings tab.</p>
+        <span class="feat-tag tag a">Haptic</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.3s">
+        <div class="feat-icon" style="background:rgba(34,197,94,.12);color:var(--green)"><i class="fa-solid fa-fingerprint"></i></div>
+        <h3>Biometric App Lock</h3>
+        <p>Locks the whole app on launch. Supports <strong style="color:var(--text)">fingerprint</strong>, <strong style="color:var(--text)">Face ID</strong>, and screen PIN/pattern/password via Android BiometricPrompt API.</p>
+        <span class="feat-tag tag g">Security</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.35s">
+        <div class="feat-icon" style="background:rgba(59,130,246,.12);color:var(--blue)"><i class="fa-solid fa-film"></i></div>
+        <h3>Lottie Splash Screen</h3>
+        <p><code style="color:var(--amber);font-size:.8em">opening.json</code> animation plays with <code style="color:var(--amber);font-size:.8em">opening.mp3</code> audio on every launch, then transitions to the lock screen after 4 seconds.</p>
+        <span class="feat-tag tag b">Animation</span>
+      </div>
+      <div class="feat-card fu" style="transition-delay:.4s">
+        <div class="feat-icon" style="background:rgba(245,158,11,.12);color:var(--amber)"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <h3>OTA Update Checker</h3>
+        <p>Fetches <code style="color:var(--amber);font-size:.8em">SmartController_version.json</code> from Netlify on startup. If remote version &gt; 10, a non-blocking update dialog appears.</p>
+        <span class="feat-tag tag a">OTA</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VOICE COMMANDS -->
+<section class="sec" style="padding-top:0" id="voice">
+  <div class="container">
+    <span class="sec-lbl fu">Natural Language Processing</span>
+    <h2 class="sec-title fu">Voice Command Reference</h2>
+    <div class="voice-grid fu">
+      <div class="voice-panel">
+        <h3><i class="fa-solid fa-lightbulb"></i> Lights &amp; Fans</h3>
+        <ul class="cmd-list">
+          <li><span class="em">💡</span><code>"left light on"</code></li>
+          <li><span class="em">💡</span><code>"right light off"</code></li>
+          <li><span class="em">💡</span><code>"all lights on"</code></li>
+          <li><span class="em">💡</span><code>"turn off the lights"</code></li>
+          <li><span class="em">🌀</span><code>"left fan on"</code></li>
+          <li><span class="em">🌀</span><code>"both fans off"</code></li>
+          <li><span class="em">🌀</span><code>"turn everything off"</code></li>
+          <li><span class="em">🌀</span><code>"switch on all devices"</code></li>
+        </ul>
+      </div>
+      <div class="voice-panel">
+        <h3><i class="fa-solid fa-clock"></i> Timed Commands</h3>
+        <ul class="cmd-list">
+          <li><span class="em">⏱️</span><code>"left light on for 2 seconds"</code></li>
+          <li><span class="em">⏱️</span><code>"turn on fans for 5 minutes"</code></li>
+          <li><span class="em">⏱️</span><code>"right light on for 1 hour"</code></li>
+          <li><span class="em">⚡</span><code>"blink left light 3 times"</code></li>
+          <li><span class="em">⚡</span><code>"flash right light 5 times"</code></li>
+          <li><span class="em">🔇</span><code>"cancel left light timer"</code></li>
+          <li><span class="em">🔇</span><code>"cancel all timers"</code></li>
+        </ul>
+      </div>
+      <div class="voice-panel">
+        <h3><i class="fa-solid fa-robot"></i> Hey Robo — Wake Word</h3>
+        <ul class="cmd-list">
+          <li><span class="em">🤖</span><code>"hey robo switch to device 1"</code></li>
+          <li><span class="em">🤖</span><code>"hey robo connect second device"</code></li>
+          <li><span class="em">🤖</span><code>"hey robo use device 3"</code></li>
+          <li><span class="em">🤖</span><code>"hey robo disconnect"</code></li>
+          <li><span class="em">🎉</span><code>"hey robo party mode"</code></li>
+          <li><span class="em">🎉</span><code>"party mode"</code> <span style="color:var(--muted);font-size:.78rem">— also standalone</span></li>
+        </ul>
+        <div style="margin-top:14px;padding:10px 12px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.16);border-radius:8px;font-size:.78rem;color:var(--dim)">
+          <i class="fa-solid fa-circle-info" style="color:var(--amber);margin-right:6px"></i>
+          The normaliser corrects mishearings: <em style="color:var(--amber)">"lift"→"left"</em>, <em style="color:var(--amber)">"van"→"fan"</em>, <em style="color:var(--amber)">"awn"→"on"</em>, <em style="color:var(--amber)">"write"→"right"</em> via Levenshtein distance.
+        </div>
+      </div>
+      <div class="voice-panel">
+        <h3><i class="fa-solid fa-volume-high"></i> Audio Routing</h3>
+        <ul class="cmd-list">
+          <li><span class="em">🔊</span><code>"speaker 1"</code></li>
+          <li><span class="em">🔊</span><code>"speaker 2"</code></li>
+          <li><span class="em">🔊</span><code>"speaker 3"</code></li>
+          <li><span class="em">🔊</span><code>"speaker 4"</code></li>
+        </ul>
+        <p style="margin-top:14px;font-size:.8rem;color:var(--dim);margin-bottom:0">Routes TTS output to any paired Bluetooth A2DP or BLE headset via Android <code style="color:var(--amber);font-size:.78em">AudioManager.setCommunicationDevice()</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIN MAP -->
+<section class="sec" style="padding-top:0">
+  <div class="container">
+    <span class="sec-lbl fu">Hardware Reference</span>
+    <h2 class="sec-title fu">Arduino Pin Map</h2>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:start" class="fu">
+      <div class="pin-map-wrap">
+        <div class="pin-header"><span>Device</span><span>Arduino Pin</span><span>Serial Command</span></div>
+        <div class="pin-row"><div class="pin-indicator"><span class="pin-dot" style="background:var(--blue)"></span><span class="device">Left Light</span></div><span class="pin">Digital 2</span><span class="cmd">turn on left light\n</span></div>
+        <div class="pin-row"><div class="pin-indicator"><span class="pin-dot" style="background:var(--blue);opacity:.6"></span><span class="device">Right Light</span></div><span class="pin">Digital 3</span><span class="cmd">turn on right light\n</span></div>
+        <div class="pin-row"><div class="pin-indicator"><span class="pin-dot" style="background:var(--orange)"></span><span class="device">Left Fan</span></div><span class="pin">Digital 4</span><span class="cmd">turn on left fan\n</span></div>
+        <div class="pin-row"><div class="pin-indicator"><span class="pin-dot" style="background:var(--orange);opacity:.6"></span><span class="device">Right Fan</span></div><span class="pin">Digital 5</span><span class="cmd">turn on right fan\n</span></div>
+        <div class="pin-row"><div class="pin-indicator"><span class="pin-dot" style="background:var(--green)"></span><span class="device">HC-05 TX</span></div><span class="pin">RX (Pin 0)</span><span class="cmd">SPP · 9600 baud</span></div>
+        <div class="pin-row"><div class="pin-indicator"><span class="pin-dot" style="background:var(--green);opacity:.6"></span><span class="device">HC-05 RX</span></div><span class="pin">TX (Pin 1)</span><span class="cmd">via voltage divider</span></div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-title"><i class="fa-brands fa-bluetooth"></i> Bluetooth Protocol</div>
+          <p style="font-size:.85rem;color:var(--dim);margin-bottom:10px">SPP UUID <code style="color:var(--amber);font-size:.8em">00001101-0000-1100-8000-00805F9B34FB</code> — classic Bluetooth Serial Port Profile. Commands are plain UTF-8 text terminated with <code style="color:var(--amber);font-size:.82em">\n</code>.</p>
+          <div class="tech-row">
+            <span class="tech-badge"><i class="fa-brands fa-bluetooth" style="color:var(--blue)"></i> HC-05</span>
+            <span class="tech-badge"><i class="fa-brands fa-bluetooth" style="color:var(--blue)"></i> HC-06</span>
+            <span class="tech-badge"><i class="fa-solid fa-circle-xmark" style="color:var(--red)"></i> BLE / HM-10</span>
+          </div>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="card-title"><i class="fa-solid fa-sliders"></i> Gesture Thresholds</div>
+          <table class="dtable">
+            <tbody>
+              <tr><td>Tilt trigger axis</td><td style="color:var(--amber)">±6.0 m/s²</td></tr>
+              <tr><td>Shake trigger</td><td style="color:var(--amber)">&gt; 2.5 g-force</td></tr>
+              <tr><td>Cooldown period</td><td style="color:var(--amber)">1,500 ms</td></tr>
+              <tr><td>Tilt vibration</td><td style="color:var(--amber)">60 ms</td></tr>
+              <tr><td>Shake vibration</td><td style="color:var(--amber)">100 ms</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="container main-layout">
+  <div>
+    <div class="card fu">
+      <div class="card-title"><i class="fa-solid fa-terminal"></i> Manual Installation</div>
+      <p style="font-size:.86rem;color:var(--dim);margin-bottom:0">SmartController uses raw Bluetooth SPP — not available on the Play Store. Follow these steps:</p>
+      <div class="term-wrap" style="margin-top:18px">
+        <div class="term-bar">
+          <span class="td r"></span><span class="td y"></span><span class="td g"></span>
+          <span class="t-lbl">INSTALL GUIDE</span>
+        </div>
+        <button class="copy-btn" id="copy-btn" onclick="copyTerm()"><i class="fa-regular fa-copy"></i> Copy</button>
+        <div class="term" id="term-block">
+<span class="t-c"># ── Step 1: Download ─────────────────────────────────────────</span>
+<span class="t-c"># Tap the "Download APK" button, or via adb:</span>
+<span class="t-p">$</span> adb install SmartController.apk
+
+<span class="t-c"># ── Step 2: Allow Unknown Sources ────────────────────────────</span>
+<span class="t-o">System:</span> <span class="t-s">"Your phone is not allowed to install unknown apps"</span>
+<span class="t-c"># → Tap "Settings" → enable "Allow from this source"</span>
+<span class="t-p">$</span> <span class="t-cmd">Tap "Install"</span>
+
+<span class="t-c"># ── Step 3: Runtime Permissions ──────────────────────────────</span>
+<span class="t-p">$</span> <span class="t-cmd">BLUETOOTH_CONNECT</span>   <span class="t-c"># HC-05 / HC-06 pairing (Android 12+)</span>
+<span class="t-p">$</span> <span class="t-cmd">RECORD_AUDIO</span>        <span class="t-c"># offline voice recognition</span>
+<span class="t-p">$</span> <span class="t-cmd">VIBRATE</span>             <span class="t-c"># gesture haptic feedback</span>
+<span class="t-p">$</span> <span class="t-cmd">INTERNET</span>            <span class="t-c"># OTA update checker + WebView guide</span>
+<span class="t-p">$</span> <span class="t-cmd">USE_BIOMETRIC</span>       <span class="t-c"># biometric app lock (optional)</span>
+
+<span class="t-c"># ── Step 4: First Run ─────────────────────────────────────────</span>
+<span class="t-c"># opening.json + opening.mp3 splash plays for ~4 seconds.</span>
+<span class="t-c"># Biometric lock prompts immediately after splash.</span>
+<span class="t-c"># Add HC-05 in Devices tab → Connect → start controlling.<br></span><span class="t-cur"></span></div>
+      </div>
+    </div>
+
+    <div class="card fu">
+      <div class="card-title"><i class="fa-solid fa-server"></i> System Requirements</div>
+      <table class="dtable">
+        <thead><tr><th>Component</th><th>Requirement</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Android OS</td><td>8.0 Oreo or higher</td><td><span class="tag g">Required</span></td></tr>
+          <tr><td>Microcontroller</td><td>Arduino UNO · Nano · Mega</td><td><span class="tag g">Required</span></td></tr>
+          <tr><td>Bluetooth Module</td><td>HC-05 or HC-06 (SPP Classic)</td><td><span class="tag g">Required</span></td></tr>
+          <tr><td>Microphone</td><td>Any built-in mic</td><td><span class="tag a">Voice Only</span></td></tr>
+          <tr><td>Biometric Sensor</td><td>Fingerprint, Face ID, or Screen Lock</td><td><span class="tag gr">Optional</span></td></tr>
+          <tr><td>Internet</td><td>OTA update check &amp; WebView guide only</td><td><span class="tag b">Startup Only</span></td></tr>
+          <tr><td>BLE / HM-10</td><td>Not supported — SPP classic BT only</td><td><span class="tag gr">Unsupported</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card fu">
+      <div class="card-title"><i class="fa-solid fa-code-branch"></i> Release History</div>
+      <ul class="rel-list">
+        <li class="rel-item">
+          <div class="rel-info">
+            <span class="rel-name">SmartController 10.0.0</span>
+            <div class="rel-meta"><span><i class="fa-regular fa-calendar"></i> Jan 2026</span><span><i class="fa-solid fa-weight-hanging"></i> 12.4 MB</span><span><i class="fa-solid fa-shield"></i> Signed APK</span></div>
+          </div>
+          <div class="rel-acts">
+            <span class="tag g">Latest</span>
+            <a href="SmartController.apk" download class="btn-p" style="padding:7px 15px;font-size:.8rem" onclick="trackDL('release')"><i class="fa-solid fa-download"></i> Download</a>
+          </div>
+        </li>
+        <li class="rel-item">
+          <div class="rel-info">
+            <span class="rel-name" style="color:var(--dim)">SmartController 9.0.0</span>
+            <div class="rel-meta"><span><i class="fa-regular fa-calendar"></i> Sep 2025</span><span><i class="fa-solid fa-weight-hanging"></i> 11.1 MB</span></div>
+          </div>
+          <div class="rel-acts">
+            <span class="tag gr">Stable</span>
+            <a href="#" class="btn-s" style="padding:7px 15px;font-size:.8rem"><i class="fa-solid fa-download"></i> Download</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card fu">
+      <div class="card-title"><i class="fa-solid fa-list-check"></i> Changelog — v10.0.0</div>
+      <ul class="clog">
+        <li>🌐 <strong style="color:var(--text)">Online WebView</strong> — Hardware guide loads live from Netlify; no local HTML bundle needed</li>
+        <li>🎉 <strong style="color:var(--text)">Party Mode Scene</strong> — 400ms alternating light show for 10 seconds, voice or UI triggered</li>
+        <li>🎛️ <strong style="color:var(--text)">Master Power FAB</strong> — Floating button turns ALL devices on/off simultaneously</li>
+        <li>📳 <strong style="color:var(--text)">Gesture Haptics</strong> — Subtle vibration (60ms tilt / 100ms shake) confirms every gesture</li>
+        <li>📱 <strong style="color:var(--text)">Motion Gestures</strong> — Accelerometer tilt controls lights and fans directionally</li>
+        <li>📳 <strong style="color:var(--text)">Shake to Toggle</strong> — Global on/off for all devices with a single shake gesture</li>
+        <li>⚙️ <strong style="color:var(--text)">Settings Tab</strong> — Toggle gestures &amp; app lock; state persisted via SharedPreferences</li>
+        <li>🎬 <strong style="color:var(--text)">Lottie Splash Screen</strong> — opening.json + opening.mp3 on every app launch</li>
+        <li>🔒 <strong style="color:var(--text)">Biometric App Lock</strong> — Fingerprint, Face ID, or screen PIN via BiometricPrompt API</li>
+        <li>🚀 <strong style="color:var(--text)">OTA Update Checker</strong> — Fetches remote version.json; shows update dialog if newer version exists</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="dl-widget fu">
+      <div id="fb-notice">⚠ Firebase not configured. Add your config in the script section to enable download tracking.</div>
+      <i class="fa-brands fa-android dl-ic"></i>
+      <h3>SmartController APK</h3>
+      <p>v10.0.0 · 12.4 MB · Android 8+ · Fully Offline</p>
+      <div class="dl-count" id="sb-cnt">—</div>
+      <div class="dl-clbl">Total Downloads</div>
+      <a href="SmartController.apk" download class="sb-btn p" onclick="trackDL('sidebar')"><i class="fa-solid fa-download"></i> Download APK</a>
+    </div>
+
+    <div class="sb-card fu">
+      <div class="sb-title"><i class="fa-solid fa-microchip"></i> Hardware Assets</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Everything you need to wire up your Arduino before connecting.</p>
+      <a href="SmartController_Hardware_Guide.html" class="sb-btn"><i class="fa-solid fa-book-open"></i> Wiring Guide</a>
+      <a href="SmartHome_CustomPins.ino" download class="sb-btn"><i class="fa-brands fa-usb"></i> Download .ino Sketch</a>
+      <a href="SmartController_Complete.zip" download class="sb-btn" onclick="trackDL('zip')"><i class="fa-solid fa-file-zipper"></i> Complete Bundle .zip</a>
+    </div>
+
+    <div class="sb-card fu">
+      <div class="sb-title"><i class="fa-solid fa-bolt"></i> Feature Highlights</div>
+      <ul class="feat-list">
+        <li><i class="fa-solid fa-microphone fi"></i><span><strong style="color:var(--text)">Hey Robo</strong> — offline wake word, no internet needed</span></li>
+        <li><i class="fa-solid fa-fingerprint fi"></i><span><strong style="color:var(--text)">Biometric Lock</strong> — BiometricPrompt API, fingerprint + Face ID</span></li>
+        <li><i class="fa-solid fa-mobile-screen fi"></i><span><strong style="color:var(--text)">Tilt &amp; Shake</strong> — accelerometer gestures with haptic feedback</span></li>
+        <li><i class="fa-solid fa-wand-magic-sparkles fi"></i><span><strong style="color:var(--text)">Party Mode</strong> — 400ms alternating lights for 10 seconds</span></li>
+        <li><i class="fa-solid fa-clock fi"></i><span><strong style="color:var(--text)">Voice Timers</strong> — "turn on fan for 5 minutes" with live countdown</span></li>
+        <li><i class="fa-solid fa-star-of-life fi"></i><span><strong style="color:var(--text)">Blink Commands</strong> — "blink left light 3 times"</span></li>
+        <li><i class="fa-solid fa-cloud-arrow-up fi"></i><span><strong style="color:var(--text)">OTA Updates</strong> — auto-checks Netlify version.json on startup</span></li>
+        <li><i class="fa-solid fa-devices fi"></i><span><strong style="color:var(--text)">4 Device Slots</strong> — switch modules by voice instantly</span></li>
+      </ul>
+    </div>
+
+    <div class="sb-card fu">
+      <div class="sb-title"><i class="fa-solid fa-circle-check"></i> Compatibility</div>
+      <table class="dtable" style="font-size:.78rem">
+        <tbody>
+          <tr><td style="padding:9px 8px">Arduino UNO</td><td><span class="tag g" style="font-size:.65rem">✓ Verified</span></td></tr>
+          <tr><td style="padding:9px 8px">Arduino Nano</td><td><span class="tag g" style="font-size:.65rem">✓ Verified</span></td></tr>
+          <tr><td style="padding:9px 8px">Arduino Mega</td><td><span class="tag a" style="font-size:.65rem">✓ Community</span></td></tr>
+          <tr><td style="padding:9px 8px">ESP32 Classic BT</td><td><span class="tag a" style="font-size:.65rem">~ Partial</span></td></tr>
+          <tr><td style="padding:9px 8px">BLE / HM-10</td><td><span class="tag gr" style="font-size:.65rem">✗ Not Supported</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </aside>
+</div>
+
+<!-- FAQ -->
+<section class="faq-sec container" id="faq">
+  <span class="sec-lbl fu">Support</span>
+  <h2 class="sec-title fu">Frequently Asked Questions</h2>
+
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">Is SmartController free to use?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">Yes — completely free for personal and educational use. The APK, Arduino sketch, and wiring guide are all provided at no cost.</div>
+  </div>
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">Why does Android show an "unknown sources" warning?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">SmartController uses the Bluetooth SPP (Serial Port Profile) API which isn't allowed on the Play Store. Go to <em>Settings → Special App Access → Install Unknown Apps</em>, enable it for your file manager, then install normally. This is safe.</div>
+  </div>
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">Does voice control require internet?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">No. Voice processing uses Android's on-device speech recognition engine. The app works fully offline at runtime. Internet is only used on startup to check for OTA updates and when you open the WebView Hardware Guide.</div>
+  </div>
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">My HC-05 isn't connecting — what should I check?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">First pair the HC-05 in Android's native Bluetooth settings (PIN is usually 1234 or 0000). Then open SmartController → Devices tab → Scan → add to a slot → tap Connect. The app tries the SPP UUID first, then falls back to raw Rfcomm on channel 1 automatically.</div>
+  </div>
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">How do I customise the Arduino pins?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">Download <code style="color:var(--amber)">SmartHome_CustomPins.ino</code> and edit the pin constants at the top. Default: Left Light → 2, Right Light → 3, Left Fan → 4, Right Fan → 5. Re-upload after any changes.</div>
+  </div>
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">How does the OTA update checker work?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">On launch the app silently fetches <code style="color:var(--amber)">SmartController_version.json</code> from <code style="color:var(--amber)">joykumbhakar.netlify.app</code>. If the JSON's <code>version</code> field exceeds 10, a non-blocking dialog appears with release notes and a direct download link. Network errors are silently ignored.</div>
+  </div>
+  <div class="faq-item fu" onclick="toggleFaq(this)">
+    <div class="faq-q"><span class="faq-qt">Can I add more than 4 Bluetooth devices?</span><i class="fa-solid fa-chevron-right faq-arr"></i></div>
+    <div class="faq-a">Current build supports a maximum of 4 saved device slots. Switch instantly via voice: <em style="color:var(--amber)">"Hey Robo switch to device 2"</em>. Only one device is active (connected) at a time.</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="ft-grid">
+      <div class="ft-brand">
+        <a href="#" class="logo" style="display:inline-flex">
+          <div class="logo-sq"><span class="sq-b"></span><span class="sq-a"></span><span class="sq-c"></span><span class="sq-d"></span></div>
+          <span style="color:var(--blue)">Smart</span><span style="color:var(--amber)">Controller</span>
+        </a>
+        <p>Open-source Android app for Arduino-based smart home control over Bluetooth serial. Built by enthusiasts, for enthusiasts.</p>
+        <div style="margin-top:14px"><span class="status-pill"><span class="spulse"></span>All Systems Operational</span></div>
+      </div>
+      <div class="ft-col">
+        <h4>Downloads</h4>
+        <ul>
+          <li><a href="SmartController.apk" download onclick="trackDL('footer')">SmartController APK</a></li>
+          <li><a href="SmartHome_CustomPins.ino" download>Arduino Sketch</a></li>
+          <li><a href="SmartController_Complete.zip" download>Complete Bundle</a></li>
+        </ul>
+      </div>
+      <div class="ft-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="SmartController_Hardware_Guide.html">Wiring Guide</a></li>
+          <li><a href="#voice">Voice Commands</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#">Changelog</a></li>
+        </ul>
+      </div>
+      <div class="ft-col">
+        <h4>Project</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Licenses</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="ft-bottom">
+      <div>&copy; 2026 SmartController Project. For Arduino Enthusiasts.</div>
+      <div class="ft-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Licenses</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   ① FIREBASE CONFIG
+   Replace with your real Firebase project credentials.
+   Firebase Console → Project Settings → Your Apps → Web app
+   ══════════════════════════════════════════════════════ */
+const FB_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID",
+  measurementId:     "G-XXXXXXXXXX"
+};
+const FB_ON = FB_CONFIG.apiKey !== "YOUR_API_KEY";
+let db = null, analytics = null;
+
+function initFB() {
+  if (!FB_ON) { document.getElementById('fb-notice').style.display = 'block'; return; }
+  try {
+    firebase.initializeApp(FB_CONFIG);
+    db = firebase.firestore();
+    if (localStorage.getItem('ck') === 'y') analytics = firebase.analytics();
+    loadCount();
+  } catch(e){ console.warn('Firebase:', e); }
+}
+
+/* ② DOWNLOAD COUNTER — Firestore doc: smartcontroller/stats, field: download_count */
+async function loadCount() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('smartcontroller').doc('stats').get();
+    renderCount(doc.exists ? (doc.data().download_count || 0) : 0);
+  } catch(e){}
+}
+async function incrementCount() {
+  if (!db) return;
+  try {
+    const ref = db.collection('smartcontroller').doc('stats');
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(ref);
+      const n = doc.exists ? (doc.data().download_count || 0) : 0;
+      tx.set(ref, { download_count: n + 1 }, { merge: true });
+      renderCount(n + 1);
+    });
+  } catch(e){}
+}
+function renderCount(n) {
+  const f = n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n);
+  ['hero-cnt','stat-cnt','sb-cnt'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=f; });
+}
+
+/* ③ DOWNLOAD TRACKING */
+function trackDL(src) {
+  incrementCount();
+  if (analytics) analytics.logEvent('file_download', { source: src, file: 'SmartController.apk' });
+  showToast('<i class="fa-solid fa-circle-check"></i> Download started — enjoy SmartController!', 'suc');
+}
+
+/* ④ COOKIE CONSENT */
+function acceptCookies() {
+  localStorage.setItem('ck','y'); hideBanner();
+  if (FB_ON && typeof firebase !== 'undefined' && firebase.apps.length) { try { analytics = firebase.analytics(); } catch(e){} }
+  showToast('<i class="fa-solid fa-cookie-bite"></i> Analytics enabled. Thanks!','inf');
+}
+function declineCookies() { localStorage.setItem('ck','n'); hideBanner(); showToast('<i class="fa-solid fa-ban"></i> Analytics declined.','wrn'); }
+function hideBanner() { const b=document.getElementById('cookie'); b.style.transform='translateY(100%)'; setTimeout(()=>b.style.display='none',410); }
+
+/* ⑤ TOAST */
+function showToast(msg, type='inf', dur=4200) {
+  const c=document.getElementById('toasts'), t=document.createElement('div');
+  t.className=`toast ${type}`; t.innerHTML=`<span class="ti">${msg}</span>`; c.appendChild(t);
+  setTimeout(()=>{ t.classList.add('rm'); setTimeout(()=>t.remove(),310); }, dur);
+}
+
+/* ⑥ COPY TERMINAL */
+function copyTerm() {
+  const txt=document.getElementById('term-block').innerText.replace(/\n+/g,'\n').trim();
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=document.getElementById('copy-btn');
+    b.innerHTML='<i class="fa-solid fa-check"></i> Copied!'; b.classList.add('ok');
+    setTimeout(()=>{ b.innerHTML='<i class="fa-regular fa-copy"></i> Copy'; b.classList.remove('ok'); },2100);
+  }).catch(()=>showToast('<i class="fa-solid fa-triangle-exclamation"></i> Copy failed — select manually.','wrn'));
+}
+
+/* ⑦ FAQ */
+function toggleFaq(el) {
+  const open=el.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(f=>f.classList.remove('open'));
+  if (!open) el.classList.add('open');
+}
+
+/* ⑧ MOBILE NAV */
+function toggleNav() { document.getElementById('main-nav').classList.toggle('open'); }
+
+/* ⑨ SCROLL ANIMATIONS */
+const obs=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('vis'); obs.unobserve(e.target); }}); },{ threshold:.1 });
+document.querySelectorAll('.fu').forEach(el=>obs.observe(el));
+
+/* ⑩ SCROLL PROGRESS */
+window.addEventListener('scroll',()=>{ const t=document.documentElement.scrollTop,h=document.documentElement.scrollHeight-document.documentElement.clientHeight; document.getElementById('prog').style.width=(t/h*100)+'%'; },{passive:true});
+
+/* ⑪ BOOT */
+window.addEventListener('load',()=>{
+  setTimeout(()=>document.getElementById('loader').classList.add('gone'),1700);
+  if (!localStorage.getItem('ck')) setTimeout(()=>document.getElementById('cookie').classList.add('show'),2400);
+  initFB();
+});
+</script>
+</body>
+</html>
